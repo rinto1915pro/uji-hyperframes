@@ -1,0 +1,84 @@
+name: Uji render HyperFrames (macOS + Windows)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 22 * * 0"   # Senin 05:00 WIB, tiap minggu
+
+env:
+  HF_VERSION: "0.9.65"     # naikkan di sini saja saat mau uji versi baru
+  HYPERFRAMES_NO_TELEMETRY: "1"
+  DO_NOT_TRACK: "1"
+  HYPERFRAMES_NO_UPDATE_CHECK: "1"
+  CI: "1"
+
+jobs:
+  render:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pasang FFmpeg (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+      - name: Pasang FFmpeg (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg -y --no-progress
+      - name: Info lingkungan
+        run: |
+          node -v; ffmpeg -version | head -1
+          npx --yes "hyperframes@${HF_VERSION}" --version
+      - name: Render sambal 15 detik
+        run: npx --yes "hyperframes@${HF_VERSION}" render --output sambal-15s.mp4
+      - name: Periksa hasil (15 s, 1080x1920) dan ambil 3 frame
+        run: |
+          d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 sambal-15s.mp4)
+          wh=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 sambal-15s.mp4)
+          echo "durasi=$d ukuran=$wh"
+          [ "${d%.*}" = "15" ] && [ "$wh" = "1080,1920" ]
+          for t in 2 7 12; do ffmpeg -y -loglevel error -ss $t -i sambal-15s.mp4 -frames:v 1 "f$(printf %02d $t).png"; done
+          echo "${{ runner.os }}: LOLOS $(date -u +%Y-%m-%d) hyperframes@${HF_VERSION} durasi=${d}s ukuran=${wh}" > "status-${{ runner.os }}.txt"
+          cat "status-${{ runner.os }}.txt" >> "$GITHUB_STEP_SUMMARY"
+      - name: Catat kegagalan
+        if: failure()
+        run: |
+          echo "${{ runner.os }}: GAGAL $(date -u +%Y-%m-%d) hyperframes@${HF_VERSION}" > "status-${{ runner.os }}.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hasil-${{ runner.os }}
+          path: |
+            sambal-15s.mp4
+            f*.png
+            status-*.txt
+          if-no-files-found: ignore
+
+  catat-status:
+    needs: render
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: hasil-*
+          merge-multiple: true
+      - name: Tulis STATUS-UJI.md dan commit
+        run: |
+          { echo "# Status uji render HyperFrames"; echo; echo "Diperbarui otomatis oleh GitHub Actions, komposisi: sambal 15 detik 1080x1920."; echo; cat status-*.txt | sed 's/^/- /'; } > STATUS-UJI.md
+          cat STATUS-UJI.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add STATUS-UJI.md
+          git diff --cached --quiet || { git commit -m "status uji $(date -u +%Y-%m-%d)"; git push; }

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><title>Sambal Botol Bu Rina — promo 15 detik</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<style>
+html,body{margin:0;background:#1a0a05}
+#root{position:relative;width:1080px;height:1920px;overflow:hidden;background:linear-gradient(180deg,#b3261e 0%,#5a0f0a 100%);font-family:Helvetica,Arial,sans-serif;color:#fff}
+.s{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;text-align:center;opacity:0}
+h1{font-size:120px;line-height:1.05;margin:0 0 40px}
+h2{font-size:88px;line-height:1.1;margin:0 0 40px}
+p{font-size:54px;line-height:1.35;margin:0;max-width:900px}
+.bottle{width:260px;height:520px;border-radius:60px 60px 40px 40px;background:#e23a1f;border:14px solid #ffd54a;margin-bottom:70px;position:relative}
+.bottle:before{content:"";position:absolute;top:-90px;left:70px;width:120px;height:90px;background:#ffd54a;border-radius:20px 20px 0 0}
+.pill{display:inline-block;background:#ffd54a;color:#5a0f0a;font-weight:bold;font-size:72px;padding:24px 60px;border-radius:999px;margin:30px 0 50px}
+</style></head>
+<body><div id="root" data-composition-id="main" data-duration="15">
+ <section class="s" id="s1" data-start="0" data-duration="5"><div class="bottle"></div><h1>Sambal Botol Bu Rina</h1><p>Pedasnya nagih, bikin nambah!</p></section>
+ <section class="s" id="s2" data-start="5" data-duration="5"><h2>Cabai segar, tanpa pengawet</h2><p>Diulek tiap pagi dari cabai rawit pilihan, bawang, dan terasi asli. Cocok untuk nasi hangat, gorengan, dan lalapan.</p></section>
+ <section class="s" id="s3" data-start="10" data-duration="5"><h2>Mulai</h2><span class="pill">Rp15.000 / botol</span><p>Pesan sekarang, klik keranjang kuning di bawah. Gratis ongkir se-Jabodetabek!</p></section>
+</div>
+<script>
+const tl=gsap.timeline({paused:true});
+[["#s1",0],["#s2",5],["#s3",10]].forEach(([id,t])=>{
+  tl.fromTo(id,{opacity:0,y:60},{opacity:1,y:0,duration:0.8,ease:"power2.out"},t)
+    .to(id,{opacity:0,duration:0.5},t+4.5);
+});
+window.__timelines=window.__timelines||{};window.__timelines["main"]=tl;tl.seek(0);
+</script></body></html>
